@@ -1,0 +1,63 @@
+
+#
+# MODELO DAS CONFIGURAÇÕES PARA EXECUÇÃO DO LARAVEL NA MÁQUINA DO DEV
+#
+# PASSOS BÁSICOS
+#
+# - TROQUE TODAS AS REFERENCIAS <placeholder*> COM OS VALORES DO SEU AMBIENTE DE DESENVOLVIMENTO
+# - LEIA SOBRE CADA SERVIÇO NO docker-compose.yml
+# - ATUALIZE AS VARIÁVEIS A CADA ALTERAÇÃO DE SERVIÇOS
+
+
+### LARAVEL ############################################################################################################
+
+DB_HOST=svc-mysql
+DB_DRIVER=mysql
+DB_PORT=3306
+DB_DATABASE=placeholder
+DB_USERNAME=placeholder
+DB_PASSWORD=placeholder
+
+########################################################################################################################
+
+### Application Image/Container
+
+# Configure aqui o diretório onde ficará o codigo fonte da sua aplicação,
+# ele ficará disponibilizado dentro do container na pasta `/var/www`.
+# como observado no arquivo docker-compose.yml no serviço application
+APPLICATION=./src
+
+# non root user/group for all containers
+NON_ROOT_USER=placeholder
+NON_ROOT_GROUP=placeholder
+
+### WORKSPACE ##########################################################################################################
+
+WORKSPACE_PUID=1000
+WORKSPACE_PGID=1000
+WORKSPACE_TIMEZONE=UTC
+WORKSPACE_SSH_PORT=9222
+
+
+### MYSQL ##############################################################################################################
+
+MYSQL_VERSION=5.7
+MYSQL_DATABASE=placeholder
+MYSQL_USER=placeholder
+MYSQL_PASSWORD=placeholder
+MYSQL_PORT=3306
+MYSQL_ROOT_PASSWORD=root
+MYSQL_ENTRYPOINT_INITDB=./mysql/docker-entrypoint-initdb.d
+MYSQL_DATA_SAVE_PATH=./mysql/data
+
+
+### NGINX ##############################################################################################################
+
+NGINX_HOST_LOG_PATH=./nginx/logs/
+NGINX_SITES_PATH=./nginx/sites/
+
+
+### ALL/ANY SERVICE #######################################################################################################
+# Replace with your Docker Host IP (will be appended to /etc/hosts)
+DOCKER_HOST_IP=10.0.75.1
+

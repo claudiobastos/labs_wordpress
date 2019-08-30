@@ -1,0 +1,103 @@
+version: '2'
+services:
+### Application Container #######################################
+    application:
+      build:
+        context: .
+      image: template_app
+      volumes:
+        - ${APPLICATION}:/var/www
+### Workspace Container #######################################
+    workspace:
+      # Leia o INFO_SETUP.txt na pasta ./workspace
+      build:
+        context: ./workspace
+        args:
+          - PUID=${WORKSPACE_PUID}
+          - PGID=${WORKSPACE_PGID}
+          - NON_ROOT_USER=${NON_ROOT_USER}
+          - NON_ROOT_GROUP=${NON_ROOT_GROUP}
+          - TZ=${WORKSPACE_TIMEZONE}
+      image: template_workspace
+      volumes_from:
+        - application
+      extra_hosts:
+        - "dockerhost:${DOCKER_HOST_IP}"
+      ports:
+        - "${WORKSPACE_SSH_PORT}:22"
+      # environment:
+      #   - SOME_INCREDIBLE_VAR=${SOME_INCREDIBLE_VAR_VALUE}
+      tty: true
+      networks:
+        - laravelnet
+### MySQL Container #########################################
+    svc-mysql:
+      build:
+        context: ./mysql
+        args:
+          - MYSQL_VERSION=${MYSQL_VERSION}
+      image: mysql
+      environment:
+        - MYSQL_DATABASE=${MYSQL_DATABASE}
+        - MYSQL_USER=${MYSQL_USER}
+        - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+        - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        - TZ=${WORKSPACE_TIMEZONE}
+      volumes:
+        - ${MYSQL_DATA_SAVE_PATH}:/var/lib/mysql
+        - ${MYSQL_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d
+      ports:
+        - "${MYSQL_PORT}:3306"
+      networks:
+        - laravelnet
+### PHP-FPM Container #######################################
+    svc-php-fpm:
+      # Leia o INFO_SETUP.txt na pasta ./php-fpm
+      build:
+        context: ./php-fpm
+        args:
+          - NON_ROOT_USER=${NON_ROOT_USER}
+          - NON_ROOT_GROUP=${NON_ROOT_GROUP}
+      image: template_php_fpm
+      volumes_from:
+        - application
+      volumes:
+        - ./php-fpm/php.ini:/usr/local/etc/php/php.ini
+      depends_on:
+        - workspace
+      expose:
+        - "9000"
+      extra_hosts:
+        - "dockerhost:${DOCKER_HOST_IP}"
+      environment:
+        - DB_HOST=${DB_HOST}
+        - DB_DRIVER=${DB_DRIVER}
+        - DB_PORT=${DB_PORT}
+        - DB_DATABASE=${DB_DATABASE}
+        - DB_USERNAME=${DB_USERNAME}
+        - DB_PASSWORD=${DB_PASSWORD}
+      networks:
+        - laravelnet
+### Nginx Server Container ##################################
+    svc-nginx:
+      # Leia o INFO_SETUP.txt na pasta ./nginx
+      build:
+        context: ./nginx
+        args:
+          - PHP_UPSTREAM=svc-php-fpm:9000
+      image: template_nginx
+      volumes_from:
+        - application
+      volumes:
+        - ${NGINX_HOST_LOG_PATH}:/var/log/nginx
+        - ${NGINX_SITES_PATH}:/etc/nginx/sites-available
+      ports:
+        - "80:80"
+        - "443:443"
+      depends_on:
+        - svc-php-fpm
+      networks:
+        - laravelnet
+networks:
+  laravelnet:
+    driver: "bridge"
